@@ -122,7 +122,7 @@ module Technoweenie # :nodoc:
         class ConfigFileNotFoundError < StandardError; end
 
         def self.included(base) #:nodoc:
-          mattr_reader :bucket_name, :s3_config
+          mattr_reader :bucket_name, :s3_config, :cache_control
           
           begin
             require 'aws/s3'
@@ -139,6 +139,7 @@ module Technoweenie # :nodoc:
           end
 
           @@bucket_name = s3_config[:bucket_name]
+          @@cache_control = s3_config[:cache_control] || 60
 
           Base.establish_connection!(s3_config.slice(:access_key_id, :secret_access_key, :server, :port, :use_ssl, :persistent, :proxy))
 
@@ -276,7 +277,8 @@ module Technoweenie # :nodoc:
               old_full_filename,
               full_filename,
               bucket_name,
-              :access => attachment_options[:s3_access]
+              :access => attachment_options[:s3_access],
+              :cache_control => "max-age=#{cache_control.to_i}"
             )
 
             @old_filename = nil
@@ -290,7 +292,8 @@ module Technoweenie # :nodoc:
                 (temp_path ? File.open(temp_path) : temp_data),
                 bucket_name,
                 :content_type => content_type,
-                :access => attachment_options[:s3_access]
+                :access => attachment_options[:s3_access],
+                :cache_control => "max-age=#{cache_control.to_i}"                
               )
             end
 
